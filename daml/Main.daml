@@ -1,0 +1,97 @@
+module Main where
+
+import Daml.Script
+
+type ChoreProposalId = ContractId ChoreProposal
+type ChoreContractId = ContractId ChoreContract
+
+--Proposal
+
+template ChoreProposal
+  with
+    child : Party
+    parent : Party
+    note : Text
+    chore : Text
+  where
+    signatory child
+    observer parent
+    choice Propose : ChoreProposalId
+      controller child
+      do create this 
+    choice Revise : ChoreProposalId
+      with
+        revision : Text
+        feedbackText : Text
+      controller child
+      do create this with
+           chore = revision 
+           note = feedbackText            
+    choice Reject : ChoreProposalId
+      with
+        feedback : Text
+      controller parent
+      do create this with
+           note = feedback
+    choice Accept : ChoreContractId
+      controller parent
+      do create ChoreContract with
+           parentInContract = parent
+           childInContract = child
+           choreName = chore    
+
+
+
+-- ChoreContract
+
+template ChoreContract
+  with
+    parentInContract : Party
+    childInContract : Party
+    choreName : Text
+  where
+    signatory parentInContract, childInContract  
+
+
+
+
+
+
+--Writing whole script
+
+-- setup : Script ChoreContractId
+setup = script do
+-- user_setup_begin
+  ethan <- allocatePartyWithHint "Ethan" (PartyIdHint "Ethan")
+  steve <- allocatePartyWithHint "Steve" (PartyIdHint "Steve")
+  ethanId <- validateUserId "ethan"
+  steveId <- validateUserId "steve"
+  createUser (User ethanId (Some ethan)) [CanActAs ethan]
+  createUser (User steveId (Some steve)) [CanActAs steve]
+  --This sometimes doesnot allow transaction on navigator
+  -- ethan <- allocateParty "Ethan"
+  -- steve <- allocateParty "Steve"
+-- user_setup_end
+
+
+
+-- -- Ethan makes a proposal 
+--   ethanProposal1 <- submit ethan do
+--     createCmd ChoreProposal with
+--       child = ethan
+--       parent = steve
+--       note = "Urgently needed"
+--       chore = "Need a lot of money"
+
+--   steveRejectsProposal <- submit steve do
+--     exerciseCmd ethanProposal1 Reject with feedback = "No"
+
+--   ethanProposal2 <- submit ethan do
+--     exerciseCmd steveRejectsProposal Revise with revision = "Ok less money" ,feedbackText = "Please"
+
+--   submit steve do 
+--     exerciseCmd ethanProposal2 Accept
+
+
+
+

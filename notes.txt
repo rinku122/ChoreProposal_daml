@@ -1,0 +1,2 @@
+--This is initiate and Accept pattern
+daml new ChoresApp --template empty-skeleton
